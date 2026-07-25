@@ -1,30 +1,9 @@
 /*
- * netprobe.c - Linux UDP Network Probe (server + client)
+ * udpxres.c - Linux UDP Network Probe (server + client)
  *
  * A UDP echo-based network diagnostic tool that measures round-trip time,
  * jitter, packet loss, reordering, and percentile latency statistics.
- *
- * This is a corrected and enhanced rewrite targeting Linux specifically:
- *   - Removed non-Linux (AIX) conditional code paths.
- *   - Fixed a divide-by-zero / SIGFPE crash in the progress bar for -n < 50.
- *   - RTT is now measured with CLOCK_MONOTONIC instead of gettimeofday(),
- *     so results can't be corrupted by NTP/wall-clock adjustments.
- *   - Packet integrity check now covers the payload (CRC32), not just the
- *     header, so payload corruption is actually detected.
- *   - Host/IP resolution now goes through getaddrinfo(), so both IPv4 and
- *     IPv6 destinations (and hostnames) are supported.
- *   - RTT history buffer grows dynamically (realloc doubling) instead of
- *     pre-allocating up to ~700MB for long-duration runs.
- *   - Packet buffers are heap-allocated once instead of living on the stack,
- *     removing a ~130KB-per-call stack footprint.
- *   - Added optional client-side send-rate pacing (--rate).
- *   - Added optional JSON summary export (--json file).
- *   - Added -h/--help and -v/--version long options, and safer numeric
- *     argument parsing (strtol with error checking instead of atoi).
- *   - Box-drawing / progress output is automatically disabled when stdout
- *     is not a terminal (e.g. redirected to a file) to keep logs clean.
- *
- * Build:  gcc -O2 -Wall -Wextra -o netprobe netprobe.c -lm
+ * Build:  gcc -O2 -Wall -Wextra -o udpxres udpxres.c -lm
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -64,7 +43,7 @@
 #define PROGRESS_BAR_SEGMENTS   50
 
 #define PACKET_MAGIC            0xABCD1234u
-#define NETPROBE_VERSION        "2.0.0-linux"
+#define udpxres_VERSION        "2.0.0-linux"
 
 /* Run modes */
 typedef enum {
@@ -609,7 +588,7 @@ static void run_server(int port, int force_family) {
     time_t last_rate_check = 0;
     unsigned long rate_counter = 0;
 
-    printf("Starting Network Probe Server (Linux, v%s)...\n", NETPROBE_VERSION);
+    printf("Starting Network Probe Server (Linux, v%s)...\n", udpxres_VERSION);
 
     int family = (force_family == AF_INET6) ? AF_INET6 : AF_INET;
     sock = socket(family, SOCK_DGRAM, 0);
@@ -758,7 +737,7 @@ static void run_client(const char *server_host, int port, run_mode_t mode,
 
     init_stats(&stats);
 
-    printf("Starting Network Probe Client (Linux, v%s)...\n", NETPROBE_VERSION);
+    printf("Starting Network Probe Client (Linux, v%s)...\n", udpxres_VERSION);
     printf("Target: %s:%d\n", server_host, port);
     switch (mode) {
         case MODE_COUNT:
@@ -1168,7 +1147,7 @@ static double parse_double_arg(const char *arg, const char *name, double min_val
 }
 
 static void print_usage(const char *prog) {
-    printf("Network Probe - Linux Edition v%s\n", NETPROBE_VERSION);
+    printf("Network Probe - Linux Edition v%s\n", udpxres_VERSION);
     printf("Usage:\n");
     printf("  Server: %s -s [-p port] [-4|-6]\n", prog);
     printf("  Client: %s -c <host> [options]\n", prog);
@@ -1230,7 +1209,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_SUCCESS);
     }
     if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
-        printf("netprobe %s\n", NETPROBE_VERSION);
+        printf("udpxres %s\n", udpxres_VERSION);
         exit(EXIT_SUCCESS);
     }
 
