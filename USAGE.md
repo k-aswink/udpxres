@@ -1,4 +1,4 @@
-# udpxres — Usage Guide
+# udpx — Usage Guide
 
 This covers every flag, both modes (server/client), the three run modes, logging output formats, and a few real scenarios you might actually use this for.
 
@@ -28,7 +28,7 @@ make
 or directly:
 
 ```bash
-gcc -O2 -Wall -Wextra -o udpxres udpxres.c -lm
+gcc -O2 -Wall -Wextra -o udpx udpx.c -lm
 ```
 
 No other dependencies. It's one source file.
@@ -36,7 +36,7 @@ No other dependencies. It's one source file.
 ## Server mode
 
 ```bash
-./udpxres -s [-p port] [-4|-6]
+./udpx -s [-p port] [-4|-6]
 ```
 
 | Flag | Meaning |
@@ -53,7 +53,7 @@ Stop it with Ctrl+C (or `SIGTERM`) — it shuts down cleanly and prints final co
 ## Client mode
 
 ```bash
-./udpxres -c <host> [options]
+./udpx -c <host> [options]
 ```
 
 `<host>` can be an IPv4 address, an IPv6 address, or a hostname — it goes through `getaddrinfo()`, so DNS resolution works.
@@ -82,19 +82,19 @@ You can only pick **one** run mode at a time (`-n`, `-t`, `--continuous` — mix
 **Count mode** (default) — send exactly N packets, then print the summary and exit.
 
 ```bash
-./udpxres -c 192.168.1.100 -n 5000
+./udpx -c 192.168.1.100 -n 5000
 ```
 
 **Duration mode** — send as fast as the socket allows (or paced, if `--rate` is set) for a fixed wall-clock time.
 
 ```bash
-./udpxres -c 192.168.1.100 -t 60
+./udpx -c 192.168.1.100 -t 60
 ```
 
 **Continuous mode** — keep going until you kill it. Prints an interim stats block every 10 seconds so you can watch it live without waiting for a final report.
 
 ```bash
-./udpxres -c 192.168.1.100 --continuous
+./udpx -c 192.168.1.100 --continuous
 ```
 
 Ctrl+C at any point (in any mode) triggers a clean shutdown and still prints the final results based on whatever was collected up to that point.
@@ -102,7 +102,7 @@ Ctrl+C at any point (in any mode) triggers a clean shutdown and still prints the
 ## Payload size
 
 ```bash
-./udpxres -c 192.168.1.100 --size 1500
+./udpx -c 192.168.1.100 --size 1500
 ```
 
 A few sizes that are actually useful, not arbitrary:
@@ -117,7 +117,7 @@ A few sizes that are actually useful, not arbitrary:
 By default the client sends as fast as it can (limited by the round-trip wait for each packet, since it's a synchronous ping-pong per packet, not a fire-and-forget flood). If you want a controlled, predictable send rate instead:
 
 ```bash
-./udpxres -c 192.168.1.100 -t 30 --rate 100
+./udpx -c 192.168.1.100 -t 30 --rate 100
 ```
 
 This paces sends to roughly 100 packets/sec using `nanosleep`. Useful when you want to simulate a specific application's traffic rate rather than just maxing out what the link/loop can handle.
@@ -125,7 +125,7 @@ This paces sends to roughly 100 packets/sec using `nanosleep`. Useful when you w
 ## Live stats
 
 ```bash
-./udpxres -c 192.168.1.100 -n 10000 --live
+./udpx -c 192.168.1.100 -n 10000 --live
 ```
 
 Updates a single status line every 100 packets with current sent/received/loss/RTT/jitter, so you don't have to wait for a 10,000-packet run to finish to see how it's going. If stdout isn't a terminal (e.g. you've piped it somewhere), it switches to printing plain lines instead of overwriting in place — safe to redirect to a file.
@@ -133,7 +133,7 @@ Updates a single status line every 100 packets with current sent/received/loss/R
 ## Logging (CSV + detailed log)
 
 ```bash
-./udpxres -c 192.168.1.100 --continuous --log myrun
+./udpx -c 192.168.1.100 --continuous --log myrun
 ```
 
 This creates two files, both written to once per second during the run:
@@ -155,7 +155,7 @@ Both files are cumulative snapshots — each row shows the stats for the *entire
 ## JSON summary output
 
 ```bash
-./udpxres -c 192.168.1.100 -n 5000 --json result.json
+./udpx -c 192.168.1.100 -n 5000 --json result.json
 ```
 
 Writes a single JSON object when the run finishes — meant for CI checks, monitoring scripts, or anything that wants a final number instead of parsing the human-readable output:
@@ -182,9 +182,9 @@ This plays nicely with `--log` — you can use both in the same run if you want 
 ## IPv4 / IPv6
 
 ```bash
-./udpxres -c ::1 -6 -n 100      # force IPv6
-./udpxres -c 192.168.1.100 -4   # force IPv4
-./udpxres -c example.com        # let the resolver pick
+./udpx -c ::1 -6 -n 100      # force IPv6
+./udpx -c 192.168.1.100 -4   # force IPv4
+./udpx -c example.com        # let the resolver pick
 ```
 
 Without `-4`/`-6`, it resolves whatever the system's default preference is. If you're testing a dual-stack host and want to be sure which family you're actually measuring, force it explicitly — don't assume.
@@ -204,30 +204,30 @@ These are generic thresholds, not tuned for any specific application. If you're 
 **"Is this VPN adding meaningful latency?"**
 
 ```bash
-./udpxres -c direct-host -n 2000 --json direct.json
-./udpxres -c vpn-host -n 2000 --json vpn.json
+./udpx -c direct-host -n 2000 --json direct.json
+./udpx -c vpn-host -n 2000 --json vpn.json
 ```
 Compare the two JSON files — specifically P50 and P99, not just the average.
 
 **"Something's dropping packets intermittently, but I don't know when"**
 
 ```bash
-./udpxres -c problem-host --continuous --log incident
+./udpx -c problem-host --continuous --log incident
 ```
 Let it run in the background, come back later, and `grep -v EXCELLENT incident.log` to jump straight to the windows where it degraded.
 
 **"Does this path handle a real MTU-sized packet, or is something silently dropping fragments?"**
 
 ```bash
-./udpxres -c host --size 1500 -t 30
-./udpxres -c host --size 8192 -t 30
+./udpx -c host --size 1500 -t 30
+./udpx -c host --size 8192 -t 30
 ```
 If the 1500-byte run is clean but the 8192-byte run shows real loss, you're likely looking at a fragmentation problem somewhere on the path (common with tunnels/overlays that don't handle fragmented UDP well).
 
 **"I want a single pass/fail number for a CI health check"**
 
 ```bash
-./udpxres -c host -n 500 --json ci_result.json
+./udpx -c host -n 500 --json ci_result.json
 ```
 Then check `loss_pct` and `rtt_ms.p99` in the JSON against whatever thresholds matter for your pipeline.
 

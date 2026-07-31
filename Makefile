@@ -1,14 +1,14 @@
 CC      ?= gcc
 CFLAGS  ?= -O2 -Wall -Wextra -std=c11
 LDLIBS  := -lm
-TARGET  := udpxres 
+TARGET  := udpx
 
 .PHONY: all clean
 
 all: $(TARGET)
 
-$(TARGET): udpxres.c
-	$(CC) $(CFLAGS) -o $(TARGET) udpxres.c $(LDLIBS)
+$(TARGET): udpx.c
+	$(CC) $(CFLAGS) -o $(TARGET) udpx.c $(LDLIBS)
 
 clean:
 	rm -f $(TARGET)

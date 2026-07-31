@@ -1,4 +1,4 @@
-# udpxres
+# udpx
 
 A small UDP round-trip probe for Linux. You run a server on one box, point the client at it from another, and it tells you the RTT, jitter, loss, and reordering on that path — with percentiles, not just an average.
 
@@ -33,23 +33,23 @@ It's a single `.c` file. No external libraries beyond the standard math library.
 Build it:
 
 ```bash
-git clone https://github.com/yourname/udpxres.git
-cd udpxres
+git clone https://github.com/yourname/udpx.git
+cd udpx
 make
 ```
 
-(or just `gcc -O2 -Wall -Wextra -o udpxres udpxres.c -lm` if you don't want to bother with the Makefile)
+(or just `gcc -O2 -Wall -Wextra -o udpx udpx.c -lm` if you don't want to bother with the Makefile)
 
 Run the server on the box you want to test against:
 
 ```bash
-./udpxres -s -p 50505
+./udpx -s -p 50505
 ```
 
 Run the client from wherever you're testing from:
 
 ```bash
-./udpxres -c 192.168.1.100 -p 50505
+./udpx -c 192.168.1.100 -p 50505
 ```
 
 That's the default: 1000 packets, 64-byte payload, and a full stats breakdown at the end.
@@ -57,7 +57,7 @@ That's the default: 1000 packets, 64-byte payload, and a full stats breakdown at
 ## Example output
 
 ```
-$ ./udpxres -c 127.0.0.1 -p 51700 -n 200
+$ ./udpx -c 127.0.0.1 -p 51700 -n 200
 
 ==============================================================================
                         NETWORK PROBE - FINAL RESULTS
@@ -103,7 +103,7 @@ Short version, since it comes up:
 - **vs `iperf3`**: iperf3 answers "how much throughput can this link sustain" by saturating it. This answers "what's the actual round-trip latency distribution for a packet of this specific size" — it's a latency/jitter probe, not a bandwidth benchmark. It doesn't try to max out your link.
 - **vs `sockperf`**: closest relative in spirit (ping-pong RTT benchmarking) — this is a lighter, single-file version of that idea, with more built-in output formats.
 
-The tradeoff: it speaks its own simple wire protocol, so you need `udpxres` on both ends. It's not going to interoperate with an existing iperf or ping deployment.
+The tradeoff: it speaks its own simple wire protocol, so you need `udpx` on both ends. It's not going to interoperate with an existing iperf or ping deployment.
 
 ## Requirements
 
