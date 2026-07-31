@@ -1,0 +1,44 @@
+name: udpxres
+version: '2.0.0'
+summary: UDP round-trip probe with RTT, jitter, loss and percentile stats
+description: |
+  udpxres is a single-binary UDP diagnostic tool for Linux. It runs as a
+  client/server pair: the server echoes packets back, and the client times
+  the round trip to report RTT, jitter (RFC 3550 style), packet loss,
+  reordering, and P50/P95/P99 latency percentiles.
+
+  Unlike ping (ICMP-only) or iperf (throughput-focused), udpxres measures
+  actual UDP round-trip latency distribution for a payload size you choose,
+  which matters for diagnosing UDP-specific applications (VoIP, gaming,
+  custom protocols) where ICMP behavior on the path doesn't match UDP
+  behavior.
+
+  Usage:
+    Server:  udpxres -s -p 50505
+    Client:  udpxres -c <host> -p 50505 [-n count | -t seconds | --continuous]
+
+  Run `udpxres --help` for the full flag reference.
+
+grade: stable
+confinement: strict
+base: core22
+
+license: MIT
+
+apps:
+  udpxres:
+    command: bin/udpxres
+    plugs:
+      - network
+      - network-bind
+
+parts:
+  udpxres:
+    plugin: nil
+    source: .
+    build-packages:
+      - gcc
+      - make
+    override-build: |
+      make
+      install -D -m0755 udpxres "$SNAPCRAFT_PART_INSTALL/bin/udpxres"
